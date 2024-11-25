@@ -1,6 +1,4 @@
-use std::env;
 use std::error::Error;
-use serde_json::Value;
 use ollama_rs::{
     generation::functions::{request::FunctionCallRequest, tools::Tool, NousFunctionCall},
     Ollama,
@@ -10,8 +8,11 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::MessageRole::User;
+use crate::functions::get_cwd::GetCwdTool;
 
-use functions::GetCwdTool;
+mod functions {
+    pub mod get_cwd;
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

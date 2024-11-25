@@ -10,7 +10,6 @@ dependencies = [
  "ollama-rs",
  "serde_json",
  "tokio",
- "tokio-stream",
 ]
 
 [[package]]
