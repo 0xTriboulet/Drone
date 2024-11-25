@@ -31,7 +31,11 @@ impl Tool for GetCwdTool {
     }
 
     async fn run(&self, _input: Value) -> Result<String, Box<dyn Error>> {
-        let cwd = env::current_dir()?;
-        Ok(cwd.display().to_string())
+        get_cwd()
     }
+}
+
+fn get_cwd() -> Result<String, Box<dyn Error>> {
+    let cwd = env::current_dir().unwrap();
+    Ok(cwd.display().to_string())
 }
