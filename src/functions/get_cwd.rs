@@ -38,4 +38,5 @@ impl Tool for GetCwdTool {
 fn get_cwd() -> Result<String, Box<dyn Error>> {
     let cwd = env::current_dir().unwrap();
     Ok(cwd.display().to_string())
+
 }
