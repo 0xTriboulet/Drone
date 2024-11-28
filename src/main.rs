@@ -14,7 +14,7 @@ mod functions {
     pub mod get_cwd;
 }
 
-fn cosine_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f64 {
+fn cosine_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f64 { // Dot product divided by magnitude
     assert_eq!(vec1.len(), vec2.len(), "Vectors must be of the same length");
 
     let dot_product = vec1.iter()
@@ -30,20 +30,21 @@ fn cosine_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f64 {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let ollama = Ollama::default();
+    let mut ollama = Ollama::default();
 
     let mut stdout = stdout();
     let all_tools: Vec<Arc<dyn Tool>> = vec![Arc::new(GetCwdTool)]; // List of all tools
-    let mut query_tools: Vec<Arc<dyn Tool>> = vec![];
 
     // Init parser
     let parser = Arc::new(NousFunctionCall::new());
 
     // Models
-    let model_name = "llama3.2:latest";
-    let embedding_model_name = "nomic-embed-text:latest";
+    let model_name = "llama3.2:latest"; // LLM
+    let embedding_model_name = "nomic-embed-text:latest"; // Embedding model
 
     loop {
+        let mut query_tools: Vec<Arc<dyn Tool>> = vec![];
+
         // Write a prompt indicator
         stdout.write_all(b"\n> ").await?;
         stdout.flush().await?;
@@ -84,7 +85,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Convert input to ChatMessage
         let input_chat_message = ChatMessage::user(input.parse().unwrap());
 
-        let mut response;
+        let response;
 
         // If we have a tool that corresponds to input, run that
         if !query_tools.is_empty() {
@@ -101,7 +102,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Handle the response directly
         let content = response.message.unwrap().content;
         stdout.write_all(content.as_bytes()).await?;
-
 
     }
 
