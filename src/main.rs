@@ -30,7 +30,8 @@ fn cosine_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f64 { // Dot product d
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let mut ollama = Ollama::default();
+    let ollama = Ollama::new(
+        "http://localhost", 11434); // Point this to your Ollama server
 
     let mut stdout = stdout();
     let all_tools: Vec<Arc<dyn Tool>> = vec![Arc::new(GetCwdTool)]; // List of all tools
