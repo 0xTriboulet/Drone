@@ -11,7 +11,7 @@ pub struct GetCwdTool;
 #[async_trait]
 impl Tool for GetCwdTool {
     fn name(&self) -> String {
-        "get_cwd".to_string()
+        "pwd".to_string()
     }
 
     fn description(&self) -> String {

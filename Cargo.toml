@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ollama-rs = { version = "0.2.1", features = ["stream", "function-calling"] }
+ollama-rs = { version = "0.2.1", features = ["stream", "function-calling", "chat-history", "default"] }
 tokio = "1.41.1"
 serde_json = "1.0.133"
 async-trait = "0.1.83"

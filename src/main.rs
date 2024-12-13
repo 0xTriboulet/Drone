@@ -8,10 +8,17 @@ use std::sync::Arc;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::generation::embeddings::request::{EmbeddingsInput, GenerateEmbeddingsRequest};
+
+use crate::functions::list_dir::ListDirTool;
+use crate::functions::change_dir::CdTool;
 use crate::functions::get_cwd::GetCwdTool;
+use crate::functions::cat_file::CatTool;
 
 mod functions {
     pub mod get_cwd;
+    pub mod change_dir;
+    pub mod list_dir;
+    pub mod cat_file;
 }
 
 fn cosine_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f64 { // Dot product divided by magnitude
@@ -28,22 +35,29 @@ fn cosine_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>) -> f64 { // Dot product d
     dot_product / (magnitude1 * magnitude2)
 }
 
+static SYSTEM_PROMPT: &str = "You are a security assistant. Your job is to find confidential or secret information in user files and report it to the user.\
+                              Use the functions provided. You MUST be able to answer questions about the files and directories in the current working directory.\
+                              If the user asks you a question, do your best to answer based on the information you have about files and directories.";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let ollama = Ollama::new(
-        "http://localhost", 11434); // Point this to your Ollama server
+
+    let mut ollama = Ollama::new_with_history(
+        "http://localhost", 11434, 5); // Point this to your Ollama server
+
+    let system_message = ChatMessage::system(SYSTEM_PROMPT.parse().unwrap());
 
     let mut stdout = stdout();
-    let all_tools: Vec<Arc<dyn Tool>> = vec![Arc::new(GetCwdTool)]; // List of all tools
-
-    // Init parser
-    let parser = Arc::new(NousFunctionCall::new());
+    let all_tools: Vec<Arc<dyn Tool>> = vec![Arc::new(GetCwdTool), Arc::new(CdTool), Arc::new(ListDirTool), Arc::new(CatTool)]; // List of all tools
 
     // Models
     let model_name = "llama3.2:latest"; // LLM
     let embedding_model_name = "nomic-embed-text:latest"; // Embedding model
 
     loop {
+        // Init parser
+        let parser = Arc::new(NousFunctionCall::new());
+
         let mut query_tools: Vec<Arc<dyn Tool>> = vec![];
 
         // Write a prompt indicator
@@ -77,11 +91,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("{:.2}%", similarity * 100.0);
 
             // If tool description is semantically similar to input
-            if similarity > 0.8 {
+            if similarity > 0.78 {
                 query_tools.push(tool.clone());
             }
 
+            if query_tools.len() >= 1 {
+                break;
+            }
+
         }
+
 
         // Convert input to ChatMessage
         let input_chat_message = ChatMessage::user(input.parse().unwrap());
@@ -91,7 +110,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // If we have a tool that corresponds to input, run that
         if !query_tools.is_empty() {
 
-            let request = FunctionCallRequest::new(model_name.into(), query_tools.clone(), vec![input_chat_message]);
+            let request = FunctionCallRequest::new(model_name.into(), all_tools.clone(), vec![input_chat_message]);
             response = ollama.send_function_call(request, parser.clone()).await?;
 
         }else{ // Otherwise, send input to LLM
@@ -101,10 +120,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
 
         // Handle the response directly
-        let content = response.message.unwrap().content;
-        stdout.write_all(content.as_bytes()).await?;
+        let content = response.message;
+
+        match content {
+
+            Some(c) => {stdout.write_all(c.content.as_bytes()).await?;}
+            None => {println!("Try again.",);}
+        }
+
+        query_tools.clear();
 
     }
+
+    println!("{:#?}", &ollama.get_messages_history("default"));
 
     Ok(())
 }
