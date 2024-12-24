@@ -3,7 +3,6 @@ mod config;
 mod util;
 
 use std::error::Error;
-use std::io::Read;
 use ollama_rs::{
     generation::functions::{request::FunctionCallRequest, tools::Tool, NousFunctionCall},
     Ollama,
@@ -38,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Automatically parse command-line arguments
     let config = config::Config::parse();
 
-    let mut ollama = Ollama::new_with_history(
+    let ollama = Ollama::new_with_history(
         config.ollama_server,
         config.ollama_port,
         MAX_MESSAGES as u16,
