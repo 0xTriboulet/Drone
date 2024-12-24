@@ -1,10 +1,8 @@
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use crate::config::COMMAND_SERVER;
 
-pub(crate) async fn connect_to_server() -> TcpStream {
+pub(crate) async fn connect_to_server(cmd_server:String) -> TcpStream {
     // Use tokio::net::TcpStream to establish an async connection
-    match TcpStream::connect(COMMAND_SERVER).await {
+    match TcpStream::connect(cmd_server).await {
         Ok(stream) => stream,
         Err(error) => panic!("Error connecting to server: {}", error),
     }

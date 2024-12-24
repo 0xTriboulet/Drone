@@ -10,10 +10,10 @@ use ollama_rs::{
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use std::sync::Arc;
+use clap::Parser;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::generation::embeddings::request::{EmbeddingsInput, GenerateEmbeddingsRequest};
-use crate::config::{EMBEDDING_MODEL, OLLAMA_MODEL, OLLAMA_PORT, OLLAMA_SERVER};
 use crate::functions::list_dir::ListDirTool;
 use crate::functions::change_dir::CdTool;
 use crate::functions::get_cwd::GetCwdTool;
@@ -34,13 +34,17 @@ static MAX_MESSAGES: usize = 10;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+
+    // Automatically parse command-line arguments
+    let config = config::Config::parse();
+
     let mut ollama = Ollama::new_with_history(
-        OLLAMA_SERVER,
-        OLLAMA_PORT,
+        config.ollama_server,
+        config.ollama_port,
         MAX_MESSAGES as u16,
     ); // Point this to your Ollama server
 
-    let mut command_stream = antenna::connect_to_server().await; // Use the command_stream for I/O
+    let mut command_stream = antenna::connect_to_server(config.command_server).await; // Use the command_stream for I/O
 
     let system_message = ChatMessage::system(SYSTEM_PROMPT.parse().unwrap());
     let all_tools: Vec<Arc<dyn Tool>> = vec![
@@ -52,8 +56,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ];
 
     // Models
-    let model_name = OLLAMA_MODEL; // LLM
-    let embedding_model_name = EMBEDDING_MODEL; // Embedding model
+    let model_name = config.ollama_model; // LLM
+    let embedding_model_name = config.embedding_model; // Embedding model
 
     loop {
         // Init parser
@@ -78,7 +82,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         for tool in all_tools.iter() {
             // Get embeddings of input
             let input_embedding_request = GenerateEmbeddingsRequest::new(
-                embedding_model_name.into(),
+                embedding_model_name.clone().into(),
                 vec![input.clone()].into(),
             );
             let input_embedding_response =
@@ -86,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // Get embeddings of tool descriptions
             let tool_embedding_request = GenerateEmbeddingsRequest::new(
-                embedding_model_name.into(),
+                embedding_model_name.clone().into(),
                 EmbeddingsInput::from(tool.description()),
             );
             let tool_embedding_response =
@@ -112,7 +116,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // If we have a tool that corresponds to input, run that
         if !query_tools.is_empty() {
             let request = FunctionCallRequest::new(
-                model_name.into(),
+                model_name.clone().into(),
                 all_tools.clone(),
                 vec![system_message.clone(), input_chat_message],
             );
@@ -120,7 +124,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         } else {
             // Otherwise, send input to LLM
             let request = ChatMessageRequest::new(
-                model_name.into(),
+                model_name.clone().into(),
                 vec![system_message.clone(), input_chat_message],
             );
             response = ollama.send_chat_messages(request).await;
