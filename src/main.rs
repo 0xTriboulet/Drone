@@ -8,7 +8,7 @@ use ollama_rs::{
     generation::functions::{request::FunctionCallRequest, tools::Tool, NousFunctionCall},
     Ollama,
 };
-use tokio::io::{stdout, AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use std::sync::Arc;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;
