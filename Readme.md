@@ -1,5 +1,5 @@
 # Drone
-Drone is a minimalist natural language interface enabled with inline semantic search for refined LLM (Large Language Model) function calling. It uses an Ollama server for natural language processing, embedding generation, and calling functions based on user inputs.
+Drone is a minimalist natural language command interface with inline semantic search for refined LLM (Large Language Model) function calling. It uses an Ollama server for natural language processing, embedding generation, and calling functions based on end user interactions.
 
 ![img.png](img.png)
 
