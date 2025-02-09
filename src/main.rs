@@ -13,6 +13,7 @@ use clap::Parser;
 use ollama_rs::generation::chat::ChatMessage;
 use ollama_rs::generation::chat::request::ChatMessageRequest;
 use ollama_rs::generation::embeddings::request::{EmbeddingsInput, GenerateEmbeddingsRequest};
+use crate::config::Config;
 use crate::functions::list_dir::ListDirTool;
 use crate::functions::change_dir::CdTool;
 use crate::functions::get_cwd::GetCwdTool;
@@ -35,7 +36,15 @@ static MAX_MESSAGES: usize = 10;
 async fn main() -> Result<(), Box<dyn Error>> {
 
     // Automatically parse command-line arguments
-    let config = config::Config::parse();
+    // Try parsing the arguments
+    let config = Config::try_parse().unwrap_or_else(|e| {
+        // Handle the error (e.g., log the problem)
+        eprintln!("Argument parsing error: {e}");
+        eprintln!("Using default configuration.");
+        // Use the default config instead
+        Config::default()
+    });
+
 
     let ollama = Ollama::new_with_history(
         config.ollama_server,
